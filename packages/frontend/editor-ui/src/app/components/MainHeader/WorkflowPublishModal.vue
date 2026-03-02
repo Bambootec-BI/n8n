@@ -21,7 +21,7 @@ import {
 	useWorkflowDocumentStore,
 	createWorkflowDocumentId,
 } from '@/app/stores/workflowDocument.store';
-import { generateVersionNameFromId } from '@/features/workflows/workflowHistory/utils';
+import { generateVersionLabelFromId } from '@/features/workflows/workflowHistory/utils';
 
 const modalBus = createEventBus();
 const i18n = useI18n();
@@ -95,7 +95,7 @@ onMounted(() => {
 		if (versionData?.name) {
 			versionName.value = versionData.name;
 		} else {
-			versionName.value = generateVersionNameFromId(workflowsStore.workflow.versionId);
+			versionName.value = generateVersionLabelFromId(workflowsStore.workflow.versionId);
 		}
 	}
 
