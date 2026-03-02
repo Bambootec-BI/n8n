@@ -9,6 +9,7 @@
 		"bench:ci": "vitest bench --run --outputJson ./profiles/benchmark-results.json && node scripts/check-regression.mjs"
 	},
 	"devDependencies": {
+		"@n8n/expression-runtime": "workspace:*",
 		"vitest": "catalog:",
 		"n8n-workflow": "workspace:*"
 	}
