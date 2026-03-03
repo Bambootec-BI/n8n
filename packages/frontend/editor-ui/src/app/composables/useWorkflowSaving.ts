@@ -79,9 +79,13 @@ export function useWorkflowSaving({
 			cancel?: () => Promise<void>;
 		} = {},
 	) {
+		const workflowDocumentStore = workflowsStore.workflowId
+			? useWorkflowDocumentStore(createWorkflowDocumentId(workflowsStore.workflowId))
+			: undefined;
+
 		if (
 			!uiStore.stateIsDirty ||
-			workflowsStore.workflow.isArchived ||
+			workflowDocumentStore?.isArchived ||
 			!getResourcePermissions(workflowsStore.workflow.scopes).workflow.update
 		) {
 			next();

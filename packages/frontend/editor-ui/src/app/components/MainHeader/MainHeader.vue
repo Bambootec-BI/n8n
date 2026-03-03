@@ -75,6 +75,7 @@ const workflow = computed(() => workflowsStore.workflow);
 const workflowId = injectStrict(WorkflowIdKey);
 const workflowDocumentStore = inject(WorkflowDocumentStoreKey, null);
 const workflowTags = computed(() => workflowDocumentStore?.value?.tags ?? []);
+const workflowIsArchived = computed(() => workflowDocumentStore?.value?.isArchived ?? false);
 const onWorkflowPage = computed(() => !!(route.meta.nodeView || route.meta.keepWorkflowAlive));
 
 const isEnterprise = computed(
@@ -290,7 +291,7 @@ async function onWorkflowDeactivated() {
 					:name="workflow.name"
 					:scopes="workflow.scopes"
 					:current-folder="parentFolderForBreadcrumbs"
-					:is-archived="workflow.isArchived"
+					:is-archived="workflowIsArchived"
 					:description="workflow.description"
 					@workflow:deactivated="onWorkflowDeactivated"
 				/>

@@ -9,6 +9,7 @@ import { useWorkflowDocumentMeta } from './workflowDocument/useWorkflowDocumentM
 import { useWorkflowDocumentPinData } from './workflowDocument/useWorkflowDocumentPinData';
 import { useWorkflowDocumentSettings } from './workflowDocument/useWorkflowDocumentSettings';
 import { useWorkflowDocumentTags } from './workflowDocument/useWorkflowDocumentTags';
+import { useWorkflowDocumentIsArchived } from './workflowDocument/useWorkflowDocumentIsArchived';
 import { useWorkflowDocumentTimestamps } from './workflowDocument/useWorkflowDocumentTimestamps';
 
 export {
@@ -56,6 +57,7 @@ export function useWorkflowDocumentStore(id: WorkflowDocumentId) {
 		const workflowDocumentChecksum = useWorkflowDocumentChecksum();
 		const workflowDocumentMeta = useWorkflowDocumentMeta();
 		const workflowDocumentTags = useWorkflowDocumentTags();
+		const workflowDocumentIsArchived = useWorkflowDocumentIsArchived();
 		const workflowDocumentPinData = useWorkflowDocumentPinData();
 		const workflowDocumentTimestamps = useWorkflowDocumentTimestamps();
 		const workflowDocumentSettings = useWorkflowDocumentSettings();
@@ -66,6 +68,7 @@ export function useWorkflowDocumentStore(id: WorkflowDocumentId) {
 			...workflowDocumentActive,
 			...workflowDocumentHomeProject,
 			...workflowDocumentChecksum,
+			...workflowDocumentIsArchived,
 			...workflowDocumentMeta,
 			...workflowDocumentSettings,
 			...workflowDocumentTags,

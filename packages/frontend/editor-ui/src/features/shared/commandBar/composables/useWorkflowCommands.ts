@@ -24,6 +24,10 @@ import { canvasEventBus } from '@/features/workflows/canvas/canvas.eventBus';
 import type { IWorkflowToShare } from '@/Interface';
 import { saveAs } from 'file-saver';
 import { useWorkflowsStore } from '@/app/stores/workflows.store';
+import {
+	useWorkflowDocumentStore,
+	createWorkflowDocumentId,
+} from '@/app/stores/workflowDocument.store';
 import type { CommandGroup, CommandBarItem } from '../types';
 import uniqBy from 'lodash/uniqBy';
 import { nodeViewEventBus } from '@/app/event-bus';
@@ -69,7 +73,12 @@ export function useWorkflowCommands(): CommandGroup {
 	const isReadOnly = computed(
 		() => sourceControlStore.preferences.branchReadOnly || collaborationStore.shouldBeReadOnly,
 	);
-	const isArchived = computed(() => workflowsStore.workflow.isArchived);
+	const isArchived = computed(() => {
+		const wfId = workflowsStore.workflowId;
+		if (!wfId) return false;
+		const workflowDocumentStore = useWorkflowDocumentStore(createWorkflowDocumentId(wfId));
+		return workflowDocumentStore.isArchived;
+	});
 
 	const workflowPermissions = computed(
 		() => getResourcePermissions(workflowsStore.workflow.scopes).workflow,
