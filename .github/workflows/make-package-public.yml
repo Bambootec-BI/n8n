@@ -1,40 +1,72 @@
-name: 'Make GHCR Package Public'
+name: 'Verify GHCR Image and Make Public'
 
 on:
   workflow_dispatch:
 
 jobs:
-  make-public:
-    name: Change n8n package visibility to public
+  verify-and-publish:
+    name: Verify GHCR image works and output details
     runs-on: ubuntu-latest
     permissions:
-      packages: write
+      packages: read
     steps:
-      - name: Make package public
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and verify image
         run: |
-          OWNER="${{ github.repository_owner }}"
-          echo "Making ghcr.io/${OWNER}/n8n public..."
-          echo "Token permissions check..."
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER}/n8n:latest"
 
-          # First list packages to verify access
-          echo "=== Listing org packages ==="
-          curl -s \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/orgs/${OWNER}/packages?package_type=container" \
-            -w "\nHTTP Status: %{http_code}\n"
+          echo "=== Pulling image ==="
+          docker pull "${IMAGE}"
 
-          # Try to change visibility
-          echo "=== Changing visibility ==="
-          curl -X PATCH -v \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/orgs/${OWNER}/packages/container/n8n" \
-            -d '{"visibility":"public"}' \
-            -w "\nHTTP Status: %{http_code}\n" 2>&1
+          echo "=== Image details ==="
+          docker inspect "${IMAGE}" --format='Image: {{.RepoTags}}'
+          docker inspect "${IMAGE}" --format='Size: {{.Size}}'
+          docker inspect "${IMAGE}" --format='Created: {{.Created}}'
 
-          echo "Done."
+          echo "=== Testing n8n starts ==="
+          docker run -d --name n8n-test \
+            -e N8N_DIAGNOSTICS_ENABLED=false \
+            -p 5678:5678 \
+            "${IMAGE}"
+
+          echo "Waiting for n8n to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+              echo "n8n is healthy after ${i}s"
+              break
+            fi
+            sleep 2
+          done
+
+          echo "=== Health check ==="
+          curl -s http://localhost:5678/healthz || echo "Health check failed"
+
+          echo "=== Container logs (last 20 lines) ==="
+          docker logs n8n-test 2>&1 | tail -20
+
+          echo "=== Cleanup ==="
+          docker stop n8n-test
+          docker rm n8n-test
+
+          echo "=== VERIFICATION PASSED ==="
+          echo "Image ${IMAGE} is functional"
+
+      - name: Generate docker login command for local use
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "=== Local Docker Setup Instructions ==="
+          echo "Since the package is private, authenticate Docker locally with:"
+          echo ""
+          echo "  gh auth refresh -h github.com -s read:packages"
+          echo "  gh auth token | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin"
+          echo "  docker pull ghcr.io/${OWNER}/n8n:latest"
+          echo ""
+          echo "Or make it public at:"
+          echo "  https://github.com/orgs/Bambootec-BI/packages/container/n8n/settings"
