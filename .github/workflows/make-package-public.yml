@@ -14,16 +14,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          OWNER="${{ github.repository_owner }}"
           echo "Making ghcr.io/${OWNER}/n8n public..."
+          echo "Token permissions check..."
 
-          # Use the GitHub API to change package visibility
-          curl -X PATCH \
+          # First list packages to verify access
+          echo "=== Listing org packages ==="
+          curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/orgs/${OWNER}/packages?package_type=container" \
+            -w "\nHTTP Status: %{http_code}\n"
+
+          # Try to change visibility
+          echo "=== Changing visibility ==="
+          curl -X PATCH -v \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/orgs/${OWNER}/packages/container/n8n" \
             -d '{"visibility":"public"}' \
-            -w "\nHTTP Status: %{http_code}\n"
+            -w "\nHTTP Status: %{http_code}\n" 2>&1
 
-          echo "Done. Verify at: https://github.com/orgs/${OWNER}/packages/container/n8n/settings"
+          echo "Done."
